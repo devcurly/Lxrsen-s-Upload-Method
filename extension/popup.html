@@ -1,253 +1,475 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-
+<title>lxrsen / upload</title>
 <style>
-body {
-  margin: 0;
-  padding: 20px;
-  width: 320px;
-  font-family: -apple-system, Arial;
-  background: #050505;
-  color: white;
-  overflow: hidden;
-  position: relative;
-}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* INTERACTIVE BACKGROUND */
-.particles {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  :root {
+    --bg: #0e0e0d;
+    --surface: #161614;
+    --border: #2a2a27;
+    --border-lit: #3f3f3a;
+    --text: #e8e6df;
+    --muted: #6b6b65;
+    --dim: #3a3a36;
+    --accent: #cc3df0;
+    --accent-dark: #5e1770;
+    --danger: #ff5c47;
+    --mono: ui-monospace, 'Cascadia Code', 'Fira Mono', 'Consolas', monospace;
+  }
 
-  pointer-events: none;
-  z-index: 0;
+  html {
+    width: 300px;
+  }
 
-  background:
-    radial-gradient(circle at var(--x,50%) var(--y,50%), rgba(168,85,247,0.15), transparent 120px),
-    radial-gradient(circle, rgba(168,85,247,0.08) 1px, transparent 1px);
+  body {
+    width: 300px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    overflow: hidden;
+    position: relative;
+  }
 
-  background-size: auto, 60px 60px;
-}
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 36px 36px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-/* MAIN */
-.main {
-  position: relative;
-  z-index: 1;
-}
+  .panel {
+    position: relative;
+    z-index: 1;
+    width: 300px;
+    background: var(--surface);
+    border-left: 1px solid var(--border-lit);
+    border-right: 1px solid var(--border-lit);
+    border-bottom: 1px solid var(--border-lit);
+  }
 
-/* LOGO */
-.logo {
-  text-align: center;
-  font-size: 16px;
-  margin-bottom: 15px;
-  font-weight: 700;
+  .panel::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 7px; height: 7px;
+    border-bottom: 1px solid var(--accent);
+    border-right: 1px solid var(--accent);
+    pointer-events: none;
+  }
 
-  background: linear-gradient(90deg,#fff,#a855f7,#fff);
-  background-size: 200%;
+  /* topbar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 13px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    border-top: 2px solid var(--accent);
+  }
 
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
 
-  text-shadow: 0 0 8px rgba(168,85,247,0.25);
+  .logo-sq {
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-  animation:
-    shine 4s linear infinite,
-    bobble 4s ease-in-out infinite;
-}
+  .logo-sq svg {
+    width: 8px;
+    height: 8px;
+    stroke: #0e0e0d;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: square;
+  }
 
-@keyframes shine {
-  0% { background-position: -200%; }
-  100% { background-position: 200%; }
-}
+  .logo-text {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
 
-@keyframes bobble {
-  0% { transform: translateY(0px) scale(1); }
-  25% { transform: translateY(-2px) scale(1.01); }
-  50% { transform: translateY(0px) scale(1.02); }
-  75% { transform: translateY(2px) scale(1.01); }
-  100% { transform: translateY(0px) scale(1); }
-}
+  .ver {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.05em;
+  }
 
-/* CARD */
-.card {
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(25px) saturate(140%);
-  border-radius: 22px;
-  padding: 18px;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow:
-    0 10px 40px rgba(0,0,0,0.6),
-    0 0 25px rgba(168,85,247,0.15);
-}
+  /* body */
+  .body {
+    padding: 16px 14px 14px;
+  }
 
-/* DROP */
-.drop {
-  border: 2px dashed rgba(255,255,255,0.2);
-  border-radius: 20px;
-  padding: 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: 0.2s;
-}
+  /* drop */
+  .drop {
+    border: 1px dashed var(--border-lit);
+    padding: 28px 16px 24px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.12s, background 0.12s;
+    user-select: none;
+  }
 
-.drop:hover {
-  transform: scale(1.02);
-  border-color: #a855f7;
-}
+  .drop::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid transparent;
+    transition: border-color 0.12s;
+    pointer-events: none;
+  }
 
-.drop.drag {
-  border-color: #a855f7;
-  box-shadow: 0 0 20px rgba(168,85,247,0.4);
-}
+  .drop:hover {
+    border-color: var(--accent);
+    background: rgba(200,240,61,0.03);
+  }
 
-.drop.error {
-  border-color: #ff4444 !important;
-  background: rgba(255,0,0,0.12);
-  animation: shake 0.3s ease;
-}
+  .drop:hover::after {
+    border-color: rgba(200,240,61,0.1);
+  }
 
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-6px); }
-  50% { transform: translateX(6px); }
-  75% { transform: translateX(-4px); }
-  100% { transform: translateX(0); }
-}
+  .drop.dragover {
+    border-color: var(--accent);
+    background: rgba(200,240,61,0.06);
+  }
 
-/* BUTTON */
-button {
-  margin-top: 12px;
-  width: 100%;
-  padding: 12px;
-  border-radius: 18px;
-  border: none;
-  background: linear-gradient(135deg,#ffffff,#a855f7);
-  color: black;
-  font-weight: bold;
-  cursor: pointer;
-}
+  .drop.has-file {
+    border-style: solid;
+    border-color: var(--border-lit);
+  }
 
-button:hover {
-  transform: scale(1.04);
-}
+  .drop.error {
+    border-color: var(--danger) !important;
+    animation: shake 0.25s ease;
+  }
 
-/* PROGRESS */
-.progress {
-  height: 6px;
-  background: #222;
-  border-radius: 12px;
-  margin-top: 10px;
-  overflow: hidden;
-}
+  @keyframes shake {
+    0%   { transform: translateX(0); }
+    20%  { transform: translateX(-4px); }
+    50%  { transform: translateX(4px); }
+    80%  { transform: translateX(-3px); }
+    100% { transform: translateX(0); }
+  }
 
-.bar {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg,#ffffff,#a855f7);
-}
+  .drop-icon {
+    width: 22px;
+    height: 22px;
+    margin: 0 auto 10px;
+    opacity: 0.3;
+    transition: opacity 0.12s;
+  }
 
-/* VIDEO */
-video {
-  width: 100%;
-  border-radius: 16px;
-  margin-top: 12px;
-  display: none;
-}
+  .drop:hover .drop-icon { opacity: 0.65; }
 
-/* STATUS */
-.status {
-  text-align: center;
-  margin-top: 8px;
-  font-size: 13px;
-}
+  .drop-icon svg {
+    width: 100%;
+    height: 100%;
+    stroke: var(--text);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+  }
 
-/* FOOTER */
-.footer {
-  margin-top: 15px;
-  display: flex;
-  justify-content: center;
-}
+  .drop-main {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
 
-.tiktok {
-  width: 32px;
-  border-radius: 10px;
-}
+  .drop-sub {
+    font-size: 9px;
+    color: var(--dim);
+    margin-top: 4px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 
-.tiktok:hover {
-  transform: scale(1.1);
-}
+  /* file row */
+  .file-row {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    overflow: hidden;
+  }
 
-/* CREDIT */
-.credit {
-  position: fixed;
-  bottom: 6px;
-  left: 10px;
-  font-size: 10px;
-  opacity: 0.5;
-  color: #ccc;
-  z-index: 2;
-}
+  .file-row.show { display: flex; }
 
-input { display: none; }
+  .file-slash {
+    font-size: 9px;
+    color: var(--dim);
+    flex-shrink: 0;
+  }
+
+  .file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    color: var(--text);
+  }
+
+  .file-meta {
+    font-size: 9px;
+    color: var(--dim);
+    flex-shrink: 0;
+  }
+
+  .file-x {
+    background: none;
+    border: none;
+    color: var(--dim);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0 1px;
+    transition: color 0.1s;
+    font-family: var(--mono);
+    flex-shrink: 0;
+  }
+
+  .file-x:hover { color: var(--danger); }
+
+  /* progress */
+  .prog-row {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .prog-row.show { display: flex; }
+
+  .prog-track {
+    flex: 1;
+    height: 2px;
+    background: var(--dim);
+  }
+
+  .prog-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.2s ease;
+  }
+
+  .prog-pct {
+    font-size: 9px;
+    color: var(--muted);
+    min-width: 26px;
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+
+  /* actions */
+  .actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .btn-go {
+    flex: 1;
+    padding: 9px 12px;
+    background: var(--accent);
+    color: #0e0e0d;
+    border: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.1s, transform 0.07s;
+  }
+
+  .btn-go:hover { background: var(--accent-dark); }
+  .btn-go:active { transform: scale(0.98); }
+  .btn-go:disabled {
+    background: var(--dim);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-rst {
+    padding: 9px 10px;
+    background: none;
+    border: 1px solid var(--border-lit);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 10px;
+    cursor: pointer;
+    transition: border-color 0.1s, color 0.1s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-rst:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* status */
+  .status {
+    margin-top: 9px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 12px;
+  }
+
+  .dot {
+    width: 4px;
+    height: 4px;
+    background: var(--dim);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .dot.ok  { background: var(--accent); }
+  .dot.err { background: var(--danger); }
+  .dot.run { background: var(--accent); animation: blink 0.6s step-start infinite; }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .status-txt {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+  }
+
+  /* footer */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 13px;
+    border-top: 1px solid var(--border);
+    margin-top: 14px;
+    background: var(--bg);
+  }
+
+  .credit {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+  }
+
+  .ttlink {
+    font-size: 9px;
+    color: var(--dim);
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.1s;
+  }
+
+  .ttlink:hover { color: var(--muted); }
+
+  .ttlink svg {
+    width: 11px;
+    height: 11px;
+    fill: currentColor;
+  }
+
+  input[type=file] { display: none; }
 </style>
 </head>
-
 <body>
 
-<div class="particles"></div>
+<div class="panel">
 
-<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-sq">
+        <svg viewBox="0 0 8 8"><polyline points="1,7 4,1 7,7"/></svg>
+      </div>
+      <span class="logo-text">lxrsen / upload</span>
+    </div>
+    <span class="ver">v2.0</span>
+  </div>
 
-<div class="logo">Lxrsen's Upload Method</div>
+  <div class="body">
 
-<div class="card">
+    <div class="drop" id="drop">
+      <div class="drop-icon">
+        <svg viewBox="0 0 24 24">
+          <polyline points="16 16 12 12 8 16"/>
+          <line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+        </svg>
+      </div>
+      <div class="drop-main">drop video or click to browse</div>
+      <div class="drop-sub">mp4 &middot; mov &middot; webm &middot; mkv</div>
+    </div>
 
-<div id="drop" class="drop">
-  Click or drop video
+    <div class="file-row" id="frow">
+      <span class="file-slash">//</span>
+      <span class="file-name" id="fname"></span>
+      <span class="file-meta" id="fmeta"></span>
+      <button class="file-x" id="clearBtn">&#x2715;</button>
+    </div>
+
+    <div class="prog-row" id="prow">
+      <div class="prog-track"><div class="prog-fill" id="pfill"></div></div>
+      <span class="prog-pct" id="ppct">0%</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn-go" id="goBtn">Process</button>
+      <button class="btn-rst" id="resetBtn">Reset</button>
+    </div>
+
+    <div class="status">
+      <div class="dot" id="dot"></div>
+      <span class="status-txt" id="stxt">waiting for file</span>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="credit">made by lxrsen (UI by curly_dev) </span>
+    <a class="ttlink" href="https://www.tiktok.com/@lxrsen.ae" target="_blank">
+      <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 12.67 0V8.88a8.27 8.27 0 0 0 4.84 1.55V7a4.85 4.85 0 0 1-1.07-.31z"/></svg>
+      tiktok
+    </a>
+  </div>
+
 </div>
 
-<input type="file" id="fileInput">
+<input type="file" id="fi" accept="video/*">
+<audio id="sfx" src="click.mp3"></audio>
 
-<button id="upload">Process</button>
-
-<div class="progress">
-  <div id="bar" class="bar"></div>
-</div>
-
-<video id="preview" controls></video>
-
-<div id="status" class="status">Ready</div>
-
-</div>
-
-<div class="footer">
-  <a href="https://www.tiktok.com/@lxrsen.ae" target="_blank">
-    <img src="tiktok.png" class="tiktok">
-  </a>
-</div>
-
-</div>
-
-<div class="credit">Made by Lxrsen</div>
-
-<audio id="sound" src="click.mp3"></audio>
-
-<!-- ✅ MOUSE FOLLOW -->
-<script>
-document.addEventListener("mousemove", (e) => {
-  const x = (e.clientX / window.innerWidth) * 100;
-  const y = (e.clientY / window.innerHeight) * 100;
-
-  document.documentElement.style.setProperty("--x", x + "%");
-  document.documentElement.style.setProperty("--y", y + "%");
-});
-</script>
-
-<!-- ✅ THIS WAS BROKEN BEFORE -->
 <script src="popup.js"></script>
 
 </body>

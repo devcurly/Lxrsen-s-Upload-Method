@@ -1,133 +1,161 @@
-let file;
+let file = null;
+let busy = false;
 
-const drop = document.getElementById("drop");
-const input = document.getElementById("fileInput");
-const status = document.getElementById("status");
-const bar = document.getElementById("bar");
-const video = document.getElementById("preview");
-const sound = document.getElementById("sound");
+const drop = document.getElementById('drop');
+const fi = document.getElementById('fi');
+const frow = document.getElementById('frow');
+const fname = document.getElementById('fname');
+const fmeta = document.getElementById('fmeta');
+const prow = document.getElementById('prow');
+const pfill = document.getElementById('pfill');
+const ppct = document.getElementById('ppct');
+const goBtn = document.getElementById('goBtn');
+const resetBtn = document.getElementById('resetBtn');
+const clearBtn = document.getElementById('clearBtn');
+const dot = document.getElementById('dot');
+const stxt = document.getElementById('stxt');
+const sfx = document.getElementById('sfx');
 
-// SOUND
-function play() {
-  if (!sound) return;
-  sound.currentTime = 0;
-  sound.volume = 0.05;
-  sound.play().catch(() => {});
+const MAX_SIZE = 30 * 1024 * 1024;
+const UPLOAD_URL = 'https://lxrsen-upload-method.onrender.com/upload';
+
+function clk() {
+  try { sfx.currentTime = 0; sfx.volume = 0.05; sfx.play(); } catch (e) {}
 }
 
-// FILE HANDLING (30MB LIMIT)
-function handleFile(f) {
-  const maxSize = 30 * 1024 * 1024;
+function fmt(b) {
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' kb';
+  return (b / 1048576).toFixed(1) + ' mb';
+}
 
-  if (f.size > maxSize) {
-    status.innerText = "❌ Max 30MB";
-    drop.classList.add("error");
+function st(msg, cls) {
+  stxt.textContent = msg;
+  dot.className = 'dot' + (cls ? ' ' + cls : '');
+}
 
-    setTimeout(() => {
-      drop.classList.remove("error");
-    }, 1000);
-
+function pick(f) {
+  if (!f) return;
+  if (!f.type.startsWith('video/')) {
+    drop.classList.add('error');
+    st('unsupported file type', 'err');
+    setTimeout(() => drop.classList.remove('error'), 350);
     return;
   }
-
+  if (f.size > MAX_SIZE) {
+    drop.classList.add('error');
+    st('max 30MB', 'err');
+    setTimeout(() => drop.classList.remove('error'), 1000);
+    return;
+  }
   file = f;
-  status.innerText = "✅ Loaded";
-
-  video.src = URL.createObjectURL(file);
-  video.style.display = "block";
+  drop.classList.add('has-file');
+  fname.textContent = f.name;
+  fmeta.textContent = fmt(f.size);
+  frow.classList.add('show');
+  st('ready to process', 'ok');
+  clk();
+  const v = document.createElement('video');
+  v.src = URL.createObjectURL(f);
+  v.onloadedmetadata = function () {
+    fmeta.textContent = fmt(f.size) + ' \u00b7 ' + Math.round(v.duration) + 's';
+  };
 }
 
-// CLICK
-drop.onclick = () => {
-  input.click();
-  play();
-};
+function clearFile() {
+  file = null;
+  fi.value = '';
+  frow.classList.remove('show');
+  drop.classList.remove('has-file');
+  prow.classList.remove('show');
+  pfill.style.width = '0%';
+  ppct.textContent = '0%';
+  goBtn.disabled = false;
+  goBtn.textContent = 'Process';
+  busy = false;
+  st('waiting for file', '');
+}
 
-// FILE SELECT
-input.onchange = () => {
-  const f = input.files[0];
-  if (!f) return;
-  handleFile(f);
-};
-
-// DRAG
-drop.addEventListener("dragover", (e) => e.preventDefault());
-
-drop.addEventListener("dragenter", (e) => {
-  e.preventDefault();
-  drop.classList.add("drag");
-});
-
-drop.addEventListener("dragleave", () => {
-  drop.classList.remove("drag");
-});
-
-drop.addEventListener("drop", (e) => {
-  e.preventDefault();
-  drop.classList.remove("drag");
-
-  const f = e.dataTransfer.files[0];
-  if (!f) return;
-
-  handleFile(f);
-});
-
-// ✅ PROCESS (FULLY FIXED)
-document.getElementById("upload").onclick = async () => {
-  play();
-
+async function go() {
   if (!file) {
-    status.innerText = "❌ No file";
+    drop.classList.add('error');
+    st('no file selected', 'err');
+    setTimeout(() => drop.classList.remove('error'), 350);
     return;
   }
-
-  bar.style.width = "20%";
-  status.innerText = "Uploading...";
+  if (busy) return;
+  busy = true;
+  goBtn.disabled = true;
+  prow.classList.add('show');
+  pfill.style.width = '0%';
+  ppct.textContent = '0%';
+  st('uploading...', 'run');
+  clk();
 
   try {
     const form = new FormData();
-    form.append("video", file);
+    form.append('video', file);
 
-    const res = await fetch("https://lxrsen-upload-method.onrender.com/upload", {
-      method: "POST",
-      body: form
-    });
+    const res = await fetch(UPLOAD_URL, { method: 'POST', body: form });
 
-    console.log("Response:", res);
+    if (!res.ok) throw new Error('Server error');
 
-    if (!res.ok) {
-      throw new Error("Server error");
-    }
-
-    status.innerText = "Enhancing...";
-    bar.style.width = "70%";
+    pfill.style.width = '70%';
+    ppct.textContent = '70%';
+    st('enhancing...', 'run');
 
     const blob = await res.blob();
+    if (!blob || blob.size === 0) throw new Error('Invalid response');
 
-    console.log("Blob size:", blob.size);
-
-    if (!blob || blob.size === 0) {
-      throw new Error("Invalid video returned");
-    }
+    pfill.style.width = '100%';
+    ppct.textContent = '100%';
+    st('done.', 'ok');
 
     const url = URL.createObjectURL(blob);
-
-    video.src = url;
-    video.style.display = "block";
-
-    bar.style.width = "100%";
-    status.innerText = "✅ Done";
-
-    // DOWNLOAD
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "boosted.mp4";
+    a.download = 'boosted.mp4';
     a.click();
 
-  } catch (err) {
-    console.error("ERROR:", err);
+    goBtn.textContent = 'Again';
 
-    status.innerText = "❌ Failed";
-    bar.style.width = "0%";
+  } catch (err) {
+    console.error(err);
+    st('failed', 'err');
+    pfill.style.width = '0%';
+    ppct.textContent = '0%';
   }
-};
+
+  busy = false;
+  goBtn.disabled = false;
+}
+
+drop.addEventListener('click', () => { fi.click(); clk(); });
+
+fi.addEventListener('change', () => {
+  const f = fi.files[0];
+  if (f) pick(f);
+});
+
+drop.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  drop.classList.add('dragover');
+});
+
+drop.addEventListener('dragleave', () => {
+  drop.classList.remove('dragover');
+});
+
+drop.addEventListener('drop', (e) => {
+  e.preventDefault();
+  drop.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) pick(f);
+});
+
+goBtn.addEventListener('click', go);
+
+resetBtn.addEventListener('click', () => { clearFile(); clk(); });
+
+if (clearBtn) {
+  clearBtn.addEventListener('click', clearFile);
+}
