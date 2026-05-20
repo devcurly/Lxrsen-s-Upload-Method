@@ -7,68 +7,71 @@ const cors = require("cors");
 
 const app = express();
 
-/* ✅ FIX CORS (VERY IMPORTANT) */
+/* ✅ CORS (fix Chrome extension errors) */
 app.use(cors({
-  origin: "*",
+  origin: "*"
 }));
 
-/* ✅ ensure uploads folder exists */
+/* ✅ uploads folder */
 const uploadDir = path.join(__dirname, "uploads");
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
-/* ✅ multer setup */
+/* ✅ multer */
 const upload = multer({ dest: uploadDir });
 
-/* ✅ TEST ROUTE (optional but useful) */
+/* ✅ test route */
 app.get("/", (req, res) => {
   res.send("✅ API is running");
 });
 
-/* ✅ MAIN UPLOAD ROUTE */
+/* ✅ upload route */
 app.post("/upload", upload.single("video"), (req, res) => {
   console.log("📥 File received");
 
   if (!req.file) {
-    return res.status(400).send("No file received");
+    return res.status(400).send("No file");
   }
 
   const input = req.file.path;
   const output = path.join(uploadDir, `output-${Date.now()}.mp4`);
 
-  /* ✅ FFmpeg command (your edit) */
-  const command = `ffmpeg -i "${input}" -vf "eq=contrast=1.08:brightness=0.02:saturation=1.15,unsharp=5:5:0.8:3:3:0.4" -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p -c:a copy -movflags +faststart "${output}"`;
+  /* ✅ FAST FFmpeg (FIXED VERSION) */
+  const command = `ffmpeg -i "${input}" -vf "eq=contrast=1.08:brightness=0.02:saturation=1.15,unsharp=5:5:0.8:3:3:0.4" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -c:a copy -movflags +faststart "${output}"`;
 
   console.log("🚀 Running:", command);
 
   exec(command, (error, stdout, stderr) => {
     console.log(stderr);
 
+    /* ❌ FFmpeg failed */
     if (error) {
       console.error("❌ FFmpeg error:", error);
 
-      // fallback: send original file so UI doesn't break
+      // fallback (send original so app doesn't break)
       return res.sendFile(path.resolve(input));
     }
 
+    /* ❌ no output */
     if (!fs.existsSync(output)) {
-      console.log("❌ No output generated");
+      console.log("❌ No output file");
 
-      // fallback again
       return res.sendFile(path.resolve(input));
     }
 
     const size = fs.statSync(output).size;
     console.log("📦 Output size:", size);
 
+    /* ❌ invalid output */
     if (size < 10000) {
-      console.log("⚠️ Output too small — fallback");
+      console.log("⚠️ Output too small");
+
       return res.sendFile(path.resolve(input));
     }
 
-    /* ✅ send processed video */
+    /* ✅ send processed file */
     res.sendFile(path.resolve(output), (err) => {
       if (err) {
         console.error("❌ Send error:", err);
@@ -78,17 +81,16 @@ app.post("/upload", upload.single("video"), (req, res) => {
       try {
         fs.unlinkSync(input);
         fs.unlinkSync(output);
-      } catch (cleanupErr) {
-        console.log("Cleanup error:", cleanupErr);
+      } catch (e) {
+        console.log("cleanup error:", e);
       }
     });
   });
 });
 
-/* ✅ START SERVER */
+/* ✅ start server */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
-``
