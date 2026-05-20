@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  width: 320px;
+  font-family: -apple-system, Arial;
+  background: #050505;
+  color: white;
+  overflow: hidden;
+  position: relative;
+}
+
+/* INTERACTIVE BACKGROUND */
+.particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  pointer-events: none;
+  z-index: 0;
+
+  background:
+    radial-gradient(circle at var(--x,50%) var(--y,50%), rgba(168,85,247,0.15), transparent 120px),
+    radial-gradient(circle, rgba(168,85,247,0.08) 1px, transparent 1px);
+
+  background-size: auto, 60px 60px;
+}
+
+/* MAIN */
+.main {
+  position: relative;
+  z-index: 1;
+}
+
+/* LOGO */
+.logo {
+  text-align: center;
+  font-size: 16px;
+  margin-bottom: 15px;
+  font-weight: 700;
+
+  background: linear-gradient(90deg,#fff,#a855f7,#fff);
+  background-size: 200%;
+
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow: 0 0 8px rgba(168,85,247,0.25);
+
+  animation:
+    shine 4s linear infinite,
+    bobble 4s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { background-position: -200%; }
+  100% { background-position: 200%; }
+}
+
+@keyframes bobble {
+  0% { transform: translateY(0px) scale(1); }
+  25% { transform: translateY(-2px) scale(1.01); }
+  50% { transform: translateY(0px) scale(1.02); }
+  75% { transform: translateY(2px) scale(1.01); }
+  100% { transform: translateY(0px) scale(1); }
+}
+
+/* CARD */
+.card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(25px) saturate(140%);
+  border-radius: 22px;
+  padding: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.6),
+    0 0 25px rgba(168,85,247,0.15);
+}
+
+/* DROP */
+.drop {
+  border: 2px dashed rgba(255,255,255,0.2);
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.drop:hover {
+  transform: scale(1.02);
+  border-color: #a855f7;
+}
+
+.drop.drag {
+  border-color: #a855f7;
+  box-shadow: 0 0 20px rgba(168,85,247,0.4);
+}
+
+.drop.error {
+  border-color: #ff4444 !important;
+  background: rgba(255,0,0,0.12);
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-4px); }
+  100% { transform: translateX(0); }
+}
+
+/* BUTTON */
+button {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 18px;
+  border: none;
+  background: linear-gradient(135deg,#ffffff,#a855f7);
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  transform: scale(1.04);
+}
+
+/* PROGRESS */
+.progress {
+  height: 6px;
+  background: #222;
+  border-radius: 12px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg,#ffffff,#a855f7);
+}
+
+/* VIDEO */
+video {
+  width: 100%;
+  border-radius: 16px;
+  margin-top: 12px;
+  display: none;
+}
+
+/* STATUS */
+.status {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+/* FOOTER */
+.footer {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+}
+
+.tiktok {
+  width: 32px;
+  border-radius: 10px;
+}
+
+.tiktok:hover {
+  transform: scale(1.1);
+}
+
+/* CREDIT */
+.credit {
+  position: fixed;
+  bottom: 6px;
+  left: 10px;
+  font-size: 10px;
+  opacity: 0.5;
+  color: #ccc;
+  z-index: 2;
+}
+
+input { display: none; }
+</style>
+</head>
+
+<body>
+
+<div class="particles"></div>
+
+<div class="main">
+
+<div class="logo">Lxrsen's Upload Method</div>
+
+<div class="card">
+
+<div id="drop" class="drop">
+  Click or drop video
+</div>
+
+<input type="file" id="fileInput">
+
+<button id="upload">Process</button>
+
+<div class="progress">
+  <div id="bar" class="bar"></div>
+</div>
+
+<video id="preview" controls></video>
+
+<div id="status" class="status">Ready</div>
+
+</div>
+
+<div class="footer">
+  <a href="https://www.tiktok.com/@lxrsen.ae" target="_blank">
+    <img src="tiktok.png" class="tiktok">
+  </a>
+</div>
+
+</div>
+
+<div class="credit">Made by Lxrsen</div>
+
+<audio id="sound" src="click.mp3"></audio>
+
+<!-- ✅ MOUSE FOLLOW -->
+<script>
+document.addEventListener("mousemove", (e) => {
+  const x = (e.clientX / window.innerWidth) * 100;
+  const y = (e.clientY / window.innerHeight) * 100;
+
+  document.documentElement.style.setProperty("--x", x + "%");
+  document.documentElement.style.setProperty("--y", y + "%");
+});
+</script>
+
+<!-- ✅ THIS WAS BROKEN BEFORE -->
+<script src="popup.js"></script>
+
+</body>
+</html>
